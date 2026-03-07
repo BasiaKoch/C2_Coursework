@@ -1,0 +1,14 @@
+# Build artefacts
+lib/
+src/*.o
+example/example
+test/test_correctness
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
