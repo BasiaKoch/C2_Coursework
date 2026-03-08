@@ -1,0 +1,17 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     'test/test_correctness'
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100002F48, symSize: 0xA4 }
+  - { offsetInCU: 0x4D, offset: 0x4D, size: 0x8, addend: 0x0, symName: _tests_run, symObjAddr: 0x1D74, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0x69, offset: 0x69, size: 0x8, addend: 0x0, symName: _tests_failed, symObjAddr: 0x1D78, symBinAddr: 0x100008004, symSize: 0x0 }
+  - { offsetInCU: 0x79, offset: 0x79, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100002F48, symSize: 0xA4 }
+  - { offsetInCU: 0x92, offset: 0x92, size: 0x8, addend: 0x0, symName: _test_2x2, symObjAddr: 0xA4, symBinAddr: 0x100002FEC, symSize: 0x1AC }
+  - { offsetInCU: 0xC4, offset: 0xC4, size: 0x8, addend: 0x0, symName: _test_3x3, symObjAddr: 0x250, symBinAddr: 0x100003198, symSize: 0x1F8 }
+  - { offsetInCU: 0xF7, offset: 0xF7, size: 0x8, addend: 0x0, symName: _test_reconstruction, symObjAddr: 0x448, symBinAddr: 0x100003390, symSize: 0x3BC }
+  - { offsetInCU: 0x21E, offset: 0x21E, size: 0x8, addend: 0x0, symName: _test_bounds, symObjAddr: 0x804, symBinAddr: 0x10000374C, symSize: 0x118 }
+  - { offsetInCU: 0x242, offset: 0x242, size: 0x8, addend: 0x0, symName: _check, symObjAddr: 0x91C, symBinAddr: 0x100003864, symSize: 0x8C }
+  - { offsetInCU: 0x274, offset: 0x274, size: 0x8, addend: 0x0, symName: _corr, symObjAddr: 0x9A8, symBinAddr: 0x1000038F0, symSize: 0x6C }
+  - { offsetInCU: 0x26, offset: 0x324, size: 0x8, addend: 0x0, symName: _mphil_dis_cholesky, symObjAddr: 0x0, symBinAddr: 0x10000395C, symSize: 0x300 }
+  - { offsetInCU: 0x48, offset: 0x346, size: 0x8, addend: 0x0, symName: _mphil_dis_cholesky, symObjAddr: 0x0, symBinAddr: 0x10000395C, symSize: 0x300 }
+...

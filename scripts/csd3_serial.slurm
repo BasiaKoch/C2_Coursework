@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --job-name=chol_serial
+#SBATCH --partition=icelake
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --exclusive
+#SBATCH --time=01:00:00
+#SBATCH --output=results/csd3_serial_%j.out
+#SBATCH --error=results/csd3_serial_%j.err
+
+# Serial comparison: v1_baseline vs v2_serial_opt
+# Experiment 1 from BENCHMARKING_PLAN.md
+# Platform: CSD3 icelake
+# Threads: 1 (serial only — no OpenMP)
+
+module purge
+module load gcc/11
+
+mkdir -p results
+
+SIZES="500 1000 2000 4000 8000"
+REPS=3
+
+echo "version,n,threads,rep,time_s,gflops" > results/csd3_serial.csv
+
+for VERSION in v1_baseline v2_serial_opt; do
+    make bench VERSION=$VERSION -s
+    for n in $SIZES; do
+        ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_serial.csv
+    done
+done
+
+echo "Done. Results in results/csd3_serial.csv"
+cat results/csd3_serial.csv
