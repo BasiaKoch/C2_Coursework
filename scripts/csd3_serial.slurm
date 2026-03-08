@@ -23,8 +23,7 @@ gcc --version
 
 mkdir -p results
 
-VERSIONS="v1_baseline v2_serial_opt v3_openmp"   # <-- add/change versions here
-SIZES="500 1000 2000 4000 8000"
+VERSIONS="v1_baseline v2_serial_opt v3_openmp"
 REPS=3
 
 export OMP_NUM_THREADS=1
@@ -34,12 +33,17 @@ echo "version,n,threads,rep,time_s,gflops" > results/csd3_serial.csv
 for VERSION in $VERSIONS; do
     echo ">>> Building $VERSION ..."
     make clean
-    make bench VERSION=$VERSION   # no -s so build errors are visible
+    make bench VERSION=$VERSION
     if [ ! -f ./test/benchmark ]; then
         echo "ERROR: failed to build $VERSION, skipping"
         continue
     fi
-    echo ">>> Running $VERSION ..."
+
+    # All versions capped at n=2000 for first exploration run.
+    # Extend SIZES once timings are confirmed sensible.
+    SIZES="500 1000 2000"
+
+    echo ">>> Running $VERSION (sizes: $SIZES) ..."
     for n in $SIZES; do
         ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_serial.csv
     done
