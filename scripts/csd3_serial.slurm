@@ -8,8 +8,8 @@
 #SBATCH --exclusive
 #SBATCH --time=01:00:00
 #SBATCH --qos=INTR
-#SBATCH --output=results/csd3_serial_%j.out
-#SBATCH --error=results/csd3_serial_%j.err
+#SBATCH --output=csd3_serial_%j.out
+#SBATCH --error=csd3_serial_%j.err
 
 # Serial comparison: v1, v2, v3 at 1 thread
 # Platform: CSD3 icelake
@@ -17,6 +17,9 @@
 
 module purge
 module load gcc/11
+
+# Print gcc version so we know exactly what compiled the code
+gcc --version
 
 mkdir -p results
 
@@ -29,7 +32,14 @@ export OMP_NUM_THREADS=1
 echo "version,n,threads,rep,time_s,gflops" > results/csd3_serial.csv
 
 for VERSION in $VERSIONS; do
-    make bench VERSION=$VERSION -s
+    echo ">>> Building $VERSION ..."
+    make clean
+    make bench VERSION=$VERSION   # no -s so build errors are visible
+    if [ ! -f ./test/benchmark ]; then
+        echo "ERROR: failed to build $VERSION, skipping"
+        continue
+    fi
+    echo ">>> Running $VERSION ..."
     for n in $SIZES; do
         ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_serial.csv
     done
