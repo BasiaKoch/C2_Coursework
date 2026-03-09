@@ -148,6 +148,21 @@ double mphil_dis_cholesky(double *c, int n)
             }
             /* --- implicit barrier at end of omp for: SYRK complete --- */
         }
+
+        /* ── Fill upper triangle ────────────────────────────────────────
+         * The spec requires c[i,j] = L^T[i,j] = L[j,i] for all i < j.
+         * Panel row-normalisation only covers columns j < kend (within the
+         * current panel), leaving c[i,j] stale for j >= kend when n > NB.
+         * This O(n^2) pass copies the lower triangle to the upper triangle
+         * after all panels are complete; cost is dominated by the O(n^3)
+         * factorisation.
+         * schedule(static): each row i has (n-i-1) elements; static gives
+         * a reasonable distribution without dynamic overhead. */
+        #pragma omp for schedule(static)
+        for (int i = 0; i < n; i++)
+            for (int j = i + 1; j < n; j++)
+                c[i * n + j] = c[j * n + i];
+        /* --- implicit barrier at end of omp for --- */
     }
     /* End of parallel region: all threads join here */
 
