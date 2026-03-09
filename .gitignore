@@ -1,16 +1,17 @@
-# build artifacts
+# Build artefacts
 lib/
 src/*.o
+example/example
+test/test_correctness
 test/benchmark
-test/test_correctness
-example/example
 
-# macOS
-.DS_Store# Build artefacts
-lib/
-src/*.o
-example/example
-test/test_correctness
+# SLURM job output files
+*.out
+*.err
+scripts/results/
+
+# Debug symbol directories (macOS)
+**/*.dSYM/
 
 # macOS
 .DS_Store
