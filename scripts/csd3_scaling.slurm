@@ -40,7 +40,7 @@ echo "version,n,threads,rep,time_s,gflops" > results/csd3_scaling.csv
 
 # Strong scaling: n=2000 fits in L3 (compute-bound), n=4000 exceeds L3 (bandwidth-bound)
 # n=8000+ excluded: single-threaded run alone would exceed 1-hour INTR limit
-for VERSION in v3_openmp v4_tuned; do
+for VERSION in v3_openmp; do
     make clean
     make bench VERSION=$VERSION
     if [ ! -f ./test/benchmark ]; then echo "ERROR: build failed for $VERSION" >&2; exit 1; fi
