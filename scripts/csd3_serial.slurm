@@ -43,8 +43,9 @@ for VERSION in $VERSIONS; do
     # Extend SIZES once timings are confirmed sensible.
     SIZES="500 1000 2000"
 
-    echo ">>> Running $VERSION (sizes: $SIZES) ..."
+    echo ">>> Running $VERSION  SIZES=$SIZES  REPS=$REPS"
     for n in $SIZES; do
+        echo "    $VERSION n=$n ..."
         ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_serial.csv
     done
 done
