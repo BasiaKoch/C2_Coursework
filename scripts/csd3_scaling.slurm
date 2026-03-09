@@ -13,7 +13,7 @@
 
 # Strong scaling study: fix n, vary thread count 1–76
 # Platform: CSD3 icelake (76 cores/node)
-# Version: v3_openmp
+# Versions: v3_openmp (barrier-based) and v4_tuned (task-DAG)
 
 # Always run from project root (where Makefile lives)
 if [ -f "$SLURM_SUBMIT_DIR/Makefile" ]; then
@@ -30,24 +30,26 @@ module load gcc/11
 
 mkdir -p results
 
-VERSION=v3_openmp
 REPS=3
 
 # Thread affinity: keep threads on nearby cores, one thread per core
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 
-make bench VERSION=$VERSION
-if [ ! -f ./test/benchmark ]; then echo "ERROR: build failed" >&2; exit 1; fi
-
 echo "version,n,threads,rep,time_s,gflops" > results/csd3_scaling.csv
 
 # Strong scaling: n=2000 fits in L3 (compute-bound), n=4000 exceeds L3 (bandwidth-bound)
 # n=8000+ excluded: single-threaded run alone would exceed 1-hour INTR limit
-for n in 2000 4000; do
-    for threads in 1 2 4 8 16 32 48 64 76; do
-        export OMP_NUM_THREADS=$threads
-        ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_scaling.csv
+for VERSION in v3_openmp v4_tuned; do
+    make clean
+    make bench VERSION=$VERSION
+    if [ ! -f ./test/benchmark ]; then echo "ERROR: build failed for $VERSION" >&2; exit 1; fi
+
+    for n in 2000 4000; do
+        for threads in 1 2 4 8 16 32 48 64 76; do
+            export OMP_NUM_THREADS=$threads
+            ./test/benchmark $n $REPS | sed "s/^/${VERSION},/" >> results/csd3_scaling.csv
+        done
     done
 done
 
