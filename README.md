@@ -48,7 +48,8 @@ and links it with the test/example binaries.
 | `v3_serial_opt` | Same as v2 with explicit comments on each optimisation |
 | `v3_openmp` | First OpenMP parallel version: `omp for schedule(static)` |
 | `v5_serial_blocked` | Panel-blocked serial reference (tune with `NB=N`) |
-| `v5_openmp_blocked` | Panel-blocked OpenMP — best performance (tune with `NB=N`) |
+| `v5_openmp_blocked` | Panel-blocked OpenMP — baseline blocked version (tune with `NB=N`) |
+| `v6_openmp_blocked` | Panel-blocked OpenMP + 4 cache/SIMD opts: col-pack, L11 cache, j×4 unroll, static,1 schedule |
 
 ## Usage
 

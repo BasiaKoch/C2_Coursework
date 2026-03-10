@@ -65,5 +65,16 @@ for n in 2000 4000 6000 8000; do
     done
 done
 
+# v6_openmp_blocked: v5 + col-pack, L11 cache, j×4 unroll, schedule(static,1)
+make clean
+make bench VERSION=v6_openmp_blocked NB=96
+if [ ! -f ./test/benchmark ]; then echo "ERROR: build failed for v6_openmp_blocked" >&2; exit 1; fi
+for n in 2000 4000 6000 8000; do
+    for threads in 1 2 4 8 16 32 48 64 76; do
+        export OMP_NUM_THREADS=$threads
+        ./test/benchmark $n $REPS | sed "s/^/v6_blocked_NB96,/" >> results/csd3_scaling.csv
+    done
+done
+
 echo "Done. Results in results/csd3_scaling.csv"
 cat results/csd3_scaling.csv

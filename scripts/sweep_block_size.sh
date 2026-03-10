@@ -21,6 +21,7 @@ N=8000                          # Matrix size (large enough to be memory-bound)
 THREADS=76                      # Thread count (all icelake physical cores)
 REPS=3                          # Repetitions per (BLOCK_NB, n, threads) cell
 BLOCK_SIZES="64 96 128 192 256" # Panel widths to sweep
+VERSION=${VERSION:-v6_openmp_blocked}  # Default to v6; override with VERSION=v5_openmp_blocked
 OUT=results/block_sweep.csv
 
 # Thread affinity settings — keep threads on nearby physical cores
@@ -40,12 +41,12 @@ echo "Output: $OUT"
 echo ""
 
 for NB in $BLOCK_SIZES; do
-    echo "--- Building v5_openmp_blocked with BLOCK_NB=$NB ---"
+    echo "--- Building $VERSION with BLOCK_NB=$NB ---"
     # Force a clean rebuild for every NB: Make tracks source-file timestamps,
     # not compiler flags, so without 'make clean' it reuses the previous binary
     # and all iterations silently run the same BLOCK_NB value.
     make clean
-    make bench VERSION=v5_openmp_blocked NB=$NB
+    make bench VERSION=$VERSION NB=$NB
 
     if [ ! -f ./test/benchmark ]; then
         echo "ERROR: build failed for NB=$NB" >&2

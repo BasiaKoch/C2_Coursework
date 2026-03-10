@@ -57,10 +57,12 @@ COLORS = {
     "v3_serial_opt":     "#2ca02c",
     "v3_openmp":         "#ff7f0e",
     "v5_blocked_NB96":  "#9467bd",
+    "v6_blocked_NB96":  "#17becf",
 }
 MARKERS = {
     "v3_openmp":         "o",
     "v5_blocked_NB96":  "s",
+    "v6_blocked_NB96":  "D",
 }
 LABELS = {
     "v1_baseline":      "v1 baseline (−O0)",
@@ -68,6 +70,7 @@ LABELS = {
     "v3_serial_opt":    "v3 serial opt (−O3)",
     "v3_openmp":        "v3 OpenMP (flat parallel)",
     "v5_blocked_NB96": "v5 panel-blocked (NB=96)",
+    "v6_blocked_NB96": "v6 panel-blocked + cache opts (NB=96)",
 }
 
 # ------------------------------------------------------------------
@@ -134,7 +137,7 @@ def fig1():
 # ==================================================================
 def fig2():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96"]
+    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=False)
 
     for ax, n in zip(axes, ns):
@@ -168,7 +171,7 @@ def fig2():
 # ==================================================================
 def fig3():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96"]
+    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=False)
 
     for ax, n in zip(axes, ns):
@@ -212,7 +215,7 @@ def fig3():
 # ==================================================================
 def fig4():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96"]
+    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=True)
 
     for ax, n in zip(axes, ns):
@@ -250,7 +253,7 @@ def fig4():
 # Fig 5 — GFLOPS vs problem size n (v5 only, selected thread counts)
 # ==================================================================
 def fig5():
-    v = "v5_blocked_NB96"
+    v = "v6_blocked_NB96"
     selected_threads = [1, 8, 32, 76]
     thread_colors = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"]
 
@@ -264,7 +267,7 @@ def fig5():
 
     ax.set_xlabel("Matrix dimension n")
     ax.set_ylabel("Performance (GFLOP/s)")
-    ax.set_title("Fig 5 — GFLOP/s vs problem size (v5 panel-blocked, NB=128)\n"
+    ax.set_title("Fig 5 — GFLOP/s vs problem size (v5 panel-blocked, NB= 96)\n"
                  "(CSD3 icelake, 3 reps, error bars = ±1 SD)")
     ax.legend()
     fig.tight_layout()
@@ -278,7 +281,7 @@ def fig5():
 # ==================================================================
 def fig6():
     n    = 8000
-    vers = ["v3_openmp", "v5_blocked_NB96"]
+    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
 
     for v in vers:
@@ -293,10 +296,10 @@ def fig6():
                  label=LABELS[v], color=COLORS[v],
                  marker=MARKERS[v], linewidth=1.6)
 
-    ax1.axhline(scaling_agg[(scaling_agg["version"] == "v5_blocked_NB96") &
+    ax1.axhline(scaling_agg[(scaling_agg["version"] == "v6_blocked_NB96") &
                              (scaling_agg["n"] == n) &
                              (scaling_agg["threads"] == 76)]["gflops_mean"].values[0],
-               color=COLORS["v5_blocked_NB96"], linestyle=":", linewidth=0.8)
+               color=COLORS["v6_blocked_NB96"], linestyle=":", linewidth=0.8)
     ax1.set_xlabel("Threads")
     ax1.set_ylabel("Performance (GFLOP/s)")
     ax1.set_title(f"GFLOP/s  (n={n})")

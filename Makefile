@@ -44,6 +44,9 @@ endif
 ifeq ($(VERSION),v5_openmp_blocked)
   OPT_FLAGS = -O3 -march=native -ffast-math -fopenmp -DBLOCK_NB=$(NB)
 endif
+ifeq ($(VERSION),v6_openmp_blocked)
+  OPT_FLAGS = -O3 -march=native -ffast-math -fopenmp -DBLOCK_NB=$(NB)
+endif
 
 # If VERSION is not listed above, fall back to -O3 (unknown version still compiles)
 OPT_FLAGS ?= -O3 -march=native -ffast-math
