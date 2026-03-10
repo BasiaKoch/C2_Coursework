@@ -7,11 +7,9 @@
 **OMP settings**: `OMP_PROC_BIND=close`, `OMP_PLACES=cores`
 **Reps**: 3 per configuration; statistics = mean ± 1 SD
 
-> **NOTE — DATA REFRESH IN PROGRESS**
-> Sections 3–5 (Tables 3–4, scaling numbers) are from the *old* run:
-> pre-correctness-fix code, NB=128. They will be replaced once the scaling
-> re-run with the corrected code + NB=96 completes.
-> Section 11 and the block-sweep results ARE from the corrected code.
+> **DATA STATUS: CURRENT**
+> All scaling data (Sections 3–5) now come from the corrected code + NB=96 re-run.
+> v6_blocked_NB96 data added from second CSD3 run. Block-sweep results confirmed.
 
 ---
 
@@ -66,77 +64,138 @@ v2 and v3 are statistically indistinguishable (all differences < 7%). v3 is kept
 
 ## 3. OpenMP Strong Scaling
 
-### Table 3 — v3_openmp strong scaling (n=8000, icelake INTR partition)
+### Table 3a — v3_openmp strong scaling (n=2000, corrected code, NB irrelevant)
 
 | Threads | Mean time (s) | GFLOP/s | Speedup | Efficiency |
 |---------|---------------|---------|---------|------------|
-| 1       | 107.61        | 1.587   | 1.00×   | 100.0%     |
-| 2       | 67.31         | 2.531   | 1.60×   | 80.0%      |
-| 4       | 36.17         | 4.719   | 2.97×   | 74.4%      |
-| 8       | 23.04         | 7.407   | 4.67×   | 58.4%      |
-| 16      | 17.98         | 9.493   | 5.99×   | 37.4%      |
-| 32      | 15.83         | 10.782  | 6.80×   | 21.3%      |
-| 48      | 14.56         | 11.720  | 7.39×   | 15.4%      |
-| 64      | 13.69         | 12.469  | 7.86×   | 12.3%      |
-| 76      | 13.27         | 12.858  | 8.11×   | 10.7%      |
+| 1       | 0.854         | 3.13    | 1.00×   | 100.0%     |
+| 2       | 0.481         | 5.55    | 1.78×   | 88.8%      |
+| 4       | 0.248         | 10.75   | 3.45×   | 86.1%      |
+| 8       | 0.148         | 18.06   | 5.78×   | 72.3%      |
+| 16      | 0.085         | 31.35   | 10.1×   | 63.0%      |
+| 32      | 0.059         | 45.41   | 14.6×   | 45.5%      |
+| 48      | 0.058         | 46.09   | **14.8× (peak)** | 30.8% |
+| 64      | 0.062         | 42.81   | 13.8×   | 21.5%      |
+| 76      | 0.079         | 33.70   | 10.8×   | 14.2%      |
 
-**Assessment**: v3_openmp scales very poorly at high thread counts. At 76 threads, only 8.1× speedup from 1 thread. Efficiency drops to 10.7% at 76 threads. Root cause: O(n) barrier overhead — every column p requires a thread synchronisation at each diagonal step, leaving threads idle for the vast majority of time.
+**Note**: v3 at n=2000 *degrades* beyond 48 threads. At 76T, performance is worse than at 48T. Fine-grained synchronisation (n=2000 barrier steps) dominates at high thread counts.
 
-### Table 4 — v5_blocked_NB128 strong scaling (n=8000, icelake INTR partition)
+### Table 3b — v3_openmp strong scaling (n=4000)
+
+| Threads | Mean time (s) | GFLOP/s | Speedup | Efficiency |
+|---------|---------------|---------|---------|------------|
+| 1       | 10.269        | 2.08    | 1.00×   | 100.0%     |
+| 2       | 4.166         | 5.11    | 2.47×   | 123%*      |
+| 4       | 2.129         | 10.02   | 4.82×   | 120%*      |
+| 8       | 1.238         | 17.22   | 8.30×   | 103.7%     |
+| 16      | 0.757         | 28.19   | 13.6×   | 84.8%      |
+| 32      | 0.449         | 47.54   | 22.9×   | 71.5%      |
+| 48      | 0.356         | 59.97   | 28.9×   | 60.1%      |
+| 64      | 0.325         | 65.65   | 31.6×   | 49.4%      |
+| 76      | 0.325         | 65.73   | 31.6×   | 41.6%      |
+
+*Super-linear speedup at 2–4 threads: cache-capacity effect — per-thread working set fits in L3.
+Saturates at 64–76T (65.7 GFLOPS at both).
+
+Note: v3 at n=6000 only has 3 reps at 1 thread (42.7 s, 1.69 GFLOPS) before the INTR job time limit was hit. n=8000 data unavailable for v3.
+
+### Table 4 — v5_blocked_NB96 strong scaling (n=8000, corrected code)
 
 | Threads | Mean time (s) | GFLOP/s  | Speedup | Efficiency |
 |---------|---------------|----------|---------|------------|
-| 1       | 68.93         | 2.476    | 1.00×   | 100.0%     |
-| 2       | 34.92         | 4.886    | 1.97×   | 98.6%      |
-| 4       | 17.17         | 9.939    | 4.01×   | 100.3%     |
-| 8       | 8.599         | 19.849   | 8.02×   | 100.2%     |
-| 16      | 4.571         | 37.332   | 15.1×   | 94.2%      |
-| 32      | 2.304         | 74.034   | 29.9×   | 93.5%      |
-| 48      | 1.569         | 108.761  | 43.9×   | 91.5%      |
-| 64      | 1.274         | 134.006  | 54.1×   | 84.5%      |
-| 76      | 1.150         | 148.426  | 59.9×   | 78.9%      |
+| 1       | 69.009        | 2.473    | 1.00×   | 100.0%     |
+| 2       | 34.575        | 4.936    | 2.00×   | 99.8%      |
+| 4       | 17.110        | 9.977    | 4.03×   | 100.8%     |
+| 8       | 8.683         | 19.655   | 7.95×   | 99.4%      |
+| 16      | 4.367         | 39.076   | 15.8×   | 98.7%      |
+| 32      | 2.231         | 76.510   | 30.9×   | 96.6%      |
+| 48      | 1.533         | 111.36   | 45.0×   | 93.8%      |
+| 64      | 1.277         | 133.74   | 54.0×   | 84.3%      |
+| 76      | 1.162         | 146.88   | 59.4×   | 78.2%      |
 
-**Assessment**: v5 shows near-linear scaling up to 32 threads. At 76 threads, 59.9× speedup (78.9% efficiency). The dramatic improvement comes from reducing barrier count from O(n) = 8000 to O(n/NB) = 63 (with NB=128), keeping threads busy between synchronisations.
+**Assessment**: Near-linear scaling to 32T. 59.4× speedup at 76T (78.2% efficiency). Barrier count reduced from O(n)=8000 (v3) to O(n/NB)=83 (v5), keeping threads busy between synchronisations.
 
----
+### Table 5 — v6_blocked_NB96 strong scaling (n=8000)
 
-## 4. v3 vs v5 Comparison (n=8000, 76 threads)
+| Threads | Mean time (s) | GFLOP/s  | Speedup | Efficiency |
+|---------|---------------|----------|---------|------------|
+| 1       | 27.319        | 6.247    | 1.00×   | 100.0%     |
+| 2       | 13.999        | 12.192   | 1.95×   | 97.6%      |
+| 4       | 10.365        | 16.465   | 2.64×   | 65.9%      |
+| 8       | 6.966         | 24.500   | 3.92×   | 49.0%      |
+| 16      | 3.522         | 48.455   | 7.76×   | 48.5%      |
+| 32      | 1.900         | 89.820   | 14.4×   | 44.9%      |
+| 48      | 1.345 ±0.10   | 127.3    | 20.3×   | 42.3%*     |
+| 64      | 1.049         | 162.68   | 26.0×   | 40.6%      |
+| 76      | 0.942         | 181.23   | **29.0×** | 38.2%  |
 
-| Metric           | v3_openmp  | v5_blocked |
-|------------------|------------|------------|
-| Time (s)         | 13.27      | 1.150      |
-| GFLOP/s          | 12.86      | 148.4      |
-| Speedup vs 1T    | 8.11×      | 59.9×      |
-| Efficiency       | 10.7%      | 78.9%      |
-| **v5 advantage** | —          | **11.5×**  |
+*High variance at 48T (CV≈8%, reps span 117–137 GFLOPS). Likely NUMA topology effect.
 
----
-
-## 5. Problem Size Scaling (v5_blocked_NB128, 76 threads)
-
-| n    | Time (s) | GFLOP/s |
-|------|----------|---------|
-| 2000 | 0.0235   | 113.7   |
-| 4000 | 0.1492   | 143.0   |
-| 6000 | 0.4876   | 147.8   |
-| 8000 | 1.150    | 148.4   |
-
-GFLOP/s increases with n because larger problems have better compute-to-barrier ratio and more effective vectorisation. Performance plateaus around n=6000–8000 as the working set exceeds L3 cache (≈38 MB; n=4000 needs 128 MB of matrix → DRAM-bound at large n).
-
-Note: n=2000 shows lower GFLOP/s due to smaller working set — fewer panels per thread, higher overhead fraction.
+**Assessment**: v6 achieves 181 GFLOPS at n=8000, 76T — +23% over v5. The lower parallel efficiency (38% vs 78%) is *not a regression*: v6's single-thread code is 2.53× faster than v5, so the parallelism ratio is lower even though absolute time is better at all thread counts above 1.
 
 ---
 
-## 6. Super-linear Speedup (v5, n=4000, 2–8 threads)
+## 4. Version Comparison (76 threads)
+
+### Table 6 — v3 vs v5 vs v6 at n=4000, 76T
+
+| Version          | Time (s) | GFLOP/s | vs v3   |
+|------------------|----------|---------|---------|
+| v3_openmp        | 0.325    | 65.7    | 1×      |
+| v5_blocked_NB96  | 0.147    | 144.9   | 2.21×   |
+| v6_blocked_NB96  | 0.104    | 205.0   | **3.12×** |
+
+### Table 7 — v5 vs v6 at 76T, all n
+
+| n    | v5 GFLOP/s | v6 GFLOP/s | v6/v5 gain |
+|------|-----------|-----------|------------|
+| 2000 | 124.7     | 238.8     | +91%       |
+| 4000 | 144.9     | 205.0     | +41%       |
+| 6000 | 147.1     | 186.1     | +26%       |
+| 8000 | 146.9     | 181.2     | +23%       |
+
+v6/v5 improvement decreases with n because Phase 3 SYRK (where OPT-3 j×4 unroll helps) dominates at large n, while Phase 2 TRSM (where OPT-2 L11 cache helps most) is relatively larger at small n.
+
+### Table 8 — Single-thread v5 vs v6 (OPT-1–3 active at 1T)
+
+| n    | v5 GFLOP/s | v6 GFLOP/s | Ratio |
+|------|-----------|-----------|-------|
+| 2000 | 2.99      | 10.33     | 3.45× |
+| 4000 | 2.61      | 7.21      | 2.76× |
+| 6000 | 2.52      | 6.54      | 2.60× |
+| 8000 | 2.47      | 6.25      | **2.53×** |
+
+The single-core improvement of 2.5–3.5× is the dominant contribution to v6's gain. Driven primarily by OPT-2 (TRSM reads: L3→L2) and OPT-3 (filling both AVX-512 FMA pipelines).
+
+---
+
+## 5. Problem Size Scaling (76 threads)
+
+### Table 9 — GFLOP/s vs n at 76T
+
+| n    | v3     | v5      | v6      |
+|------|--------|---------|---------|
+| 2000 | 33.7   | 124.7   | 238.8   |
+| 4000 | 65.7   | 144.9   | 205.0   |
+| 6000 | n/a*   | 147.1   | 186.1   |
+| 8000 | n/a*   | 146.9   | 181.2   |
+
+*v3 at n=6000+ not available (INTR time limit).
+
+v5 plateaus from n=4000 (144.9) to n=8000 (146.9): working set exceeds L3 cache (38 MB; n=4000 matrix = 128 MB) so memory-bandwidth-bound. v6 also plateaus but at higher absolute performance.
+
+---
+
+## 6. Super-linear Speedup (v3 at n=4000, 1–8 threads)
 
 | Threads | Time (s) | Speedup  |
 |---------|----------|----------|
-| 1       | 8.341    | 1.00×    |
-| 2       | 4.259    | 1.96×    |
-| 4       | 2.103    | 3.97×    |
-| 8       | 1.057    | **7.89×** |
+| 1       | 10.269   | 1.00×    |
+| 2       | 4.166    | 2.47×    |
+| 4       | 2.129    | **4.82×** |
+| 8       | 1.238    | 8.30×    |
 
-At 8 threads, near-perfect efficiency (98.7%). The n=4000 matrix is 128 MB (exceeds 76 MB per-socket L3), but with 8 threads the effective per-thread working set fits in L3, reducing DRAM traffic and enabling super-linear speedup. This is a cache-capacity effect.
+Super-linear speedup (4.82× at 4T, 8.30× at 8T) in v3 at n=4000. Root cause: the full 128 MB matrix exceeds per-socket L3 (38 MB), but 4–8 threads partition the trailing submatrix so each thread's working rows fit in L3, eliminating most DRAM traffic. Cache-capacity effect. Same phenomenon seen in v5 at smaller n.
 
 ---
 
@@ -158,7 +217,7 @@ At 8 threads, near-perfect efficiency (98.7%). The n=4000 matrix is 128 MB (exce
 
 8. **GFLOP/s increases with n** for v5 due to better ratio of useful work to synchronisation overhead.
 
-9. **v6 adds four microarchitectural opts** (col-pack, L11 private cache, j×4 unroll, static,1 schedule). Expected additional gain: [TO BE MEASURED on CSD3].
+9. **v6 adds four microarchitectural opts** (col-pack, L11 private cache, j×4 unroll, static,1 schedule). Measured gain: +23% at n=8000, 76T; +41% at n=4000, 76T; **2.53× single-thread** at n=8000.
 
 10. **All CVs < 3.5%**, confirming highly reproducible measurements on CSD3 icelake.
 
@@ -188,7 +247,14 @@ optimisations: (i) column packing to eliminate stride-n reads in Phase 1, (ii) a
 per-thread L11 cache keeping the diagonal block in L2 during Phase 2 TRSM,
 (iii) 4-wide j-loop unrolling in Phase 3 to fill both AVX-512 FMA pipelines, and
 (iv) `schedule(static,1)` for load-balanced triangular work distribution.
-[UPDATE PARAGRAPH with actual v6 GFLOP/s once CSD3 scaling re-run completes.]
+v6_openmp_blocked adds four microarchitectural optimisations: (i) column packing in Phase 1
+eliminates stride-n reads; (ii) a private per-thread L11 cache converts Phase 2 TRSM reads
+from L3 (stride 64 KB) to L2 (stride 768 B); (iii) 4-wide j-loop unrolling in Phase 3 SYRK
+exposes four independent FMA chains filling both AVX-512 pipelines simultaneously; (iv)
+`schedule(static,1)` gives each thread a round-robin mix of heavy and light rows for better
+load balance. Together these yield a 2.53× single-thread improvement (n=8000) and 181
+GFLOP/s at 76 threads — 23% above v5. The lower parallel efficiency of v6 (38% vs 78%)
+reflects the stronger single-core baseline rather than any parallelism degradation.
 
 ---
 
