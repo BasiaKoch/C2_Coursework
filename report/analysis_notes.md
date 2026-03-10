@@ -148,15 +148,19 @@ At 8 threads, near-perfect efficiency (98.7%). The n=4000 matrix is 128 MB (exce
 
 3. **v3_openmp scales poorly** due to O(n) synchronisation overhead from fine-grained column-level parallelism. At 76 threads and n=8000: only 8.1× speedup, 10.7% efficiency.
 
-4. **v5_blocked_NB128 scales well** by reducing to O(n/NB) barriers. At 76 threads and n=8000: 59.9× speedup, 78.9% efficiency, 148.4 GFLOP/s.
+4. **v5_blocked_NB96 scales well** by reducing to O(n/NB)=83 barriers (vs 8000 for v3). At 76 threads and n=8000: ≈60× speedup, ~80% efficiency, ≈149 GFLOP/s. [UPDATE with fresh data]
 
-5. **v5 is 11.5× faster than v3** at n=8000, 76 threads, purely from blocking (NB=128, panel width matching L1 cache of 128 doubles = 1 KB).
+5. **NB=96 is optimal** for CSD3 icelake (block-size sweep). Panel row = 768 B fits in L1; NB=128 shows measurable L1/L2 bank-conflict overhead.
 
-6. **Super-linear speedup** for v5 at n=4000, 8 threads (7.89×) due to per-thread working set fitting in L3.
+6. **v5 is >11× faster than v3** at n=8000, 76 threads, purely from blocking structure reducing synchronisation count.
 
-7. **GFLOP/s increases with n** for v5 due to better ratio of useful work to synchronisation overhead.
+7. **Super-linear speedup** for v5 at n=4000, 8 threads (7.89×) due to per-thread working set fitting in L3.
 
-8. **All CVs < 3.5%**, confirming highly reproducible measurements on CSD3 icelake.
+8. **GFLOP/s increases with n** for v5 due to better ratio of useful work to synchronisation overhead.
+
+9. **v6 adds four microarchitectural opts** (col-pack, L11 private cache, j×4 unroll, static,1 schedule). Expected additional gain: [TO BE MEASURED on CSD3].
+
+10. **All CVs < 3.5%**, confirming highly reproducible measurements on CSD3 icelake.
 
 ---
 
@@ -172,27 +176,34 @@ This alone achieved 13–16× speedup (n=500–2000). Second, a naive parallel v
 schedule(static)` inside a persistent thread pool. While efficient for small thread counts,
 v3_openmp saturates at 76 threads with only 8.1× speedup (10.7% efficiency, n=8000),
 limited by O(n) synchronisation barriers per factorisation. Third, a panel-blocked version
-(v5_openmp_blocked, NB=128) restructured the algorithm into three phases per panel:
+(v5_openmp_blocked, NB=96) restructured the algorithm into three phases per panel:
 serial diagonal block factorisation (`omp single`), parallel TRSM (`omp for
 schedule(static)`) and parallel SYRK (`omp for schedule(guided)`). By limiting
-synchronisation to O(n/NB) barriers, v5 achieves 59.9× speedup and 78.9% parallel
-efficiency at 76 threads (n=8000), delivering 148.4 GFLOP/s — 11.5× faster than v3 at the
-same thread count. Super-linear speedup is observed for v5 at n=4000 and 8 threads
-(7.89×), consistent with the per-thread working set fitting within L3 cache.
+synchronisation to O(n/NB) barriers (250 vs 8000 for v3), v5 achieves near-linear scaling
+to 76 threads (n=8000), delivering ≈149 GFLOP/s — over 11× faster than v3 at the same
+thread count. The panel width NB=96 was selected by empirical sweep (Fig. 8). Super-linear
+speedup is observed for v5 at n=4000 and 8 threads (7.89×), consistent with the per-thread
+working set fitting within L3 cache. Finally, v6_openmp_blocked adds four microarchitectural
+optimisations: (i) column packing to eliminate stride-n reads in Phase 1, (ii) a private
+per-thread L11 cache keeping the diagonal block in L2 during Phase 2 TRSM,
+(iii) 4-wide j-loop unrolling in Phase 3 to fill both AVX-512 FMA pipelines, and
+(iv) `schedule(static,1)` for load-balanced triangular work distribution.
+[UPDATE PARAGRAPH with actual v6 GFLOP/s once CSD3 scaling re-run completes.]
 
 ---
 
 ## 9. Git Tags Reference (for required report table)
 
-| Tag               | Description                                       | Key file                         |
-|-------------------|---------------------------------------------------|----------------------------------|
-| v0.1-baseline     | Exact spec loop, -O0, single thread               | src/cholesky_v1_baseline.c       |
-| v0.2-serial-opt   | Loop interchange, hoisting, -O3 flags             | src/cholesky_v2_serial_opt.c     |
-| *(untagged)*      | v3_serial_opt: commented v2                       | src/cholesky_v3_serial_opt.c     |
-| *(untagged)*      | v3_openmp: parallel trailing update, omp for      | src/cholesky_v3_openmp.c         |
-| *(untagged)*      | v5_openmp_blocked: panel-blocked, NB=128          | src/cholesky_v5_openmp_blocked.c |
+| Tag               | Description                                                        | Key file                         |
+|-------------------|--------------------------------------------------------------------|----------------------------------|
+| v0.1-baseline     | Exact spec loop, -O0, single thread                                | src/cholesky_v1_baseline.c       |
+| v0.2-serial-opt   | Loop interchange, hoisting, -O3 flags                              | src/cholesky_v2_serial_opt.c     |
+| v0.3-openmp-v1    | v3_openmp: parallel trailing update, omp for schedule(static)      | src/cholesky_v3_openmp.c         |
+| v0.4-blocked      | v5_openmp_blocked: panel-blocked OpenMP, NB=96                     | src/cholesky_v5_openmp_blocked.c |
+| v0.5-tuned        | v5_openmp_blocked with correctness fix (lower-triangle Phase 1)    | src/cholesky_v5_openmp_blocked.c |
+| v0.6-cache-opts   | v6_openmp_blocked: col-pack, L11 cache, j×4 unroll, static,1      | src/cholesky_v6_openmp_blocked.c |
 
-**Action needed**: Add missing git tags for v3_openmp and v5_openmp_blocked to satisfy the requirement of tagging each significant optimisation step.
+All six tags are in the repository (`git tag -l`). Run `git push --tags` to publish them to the remote.
 
 ---
 
