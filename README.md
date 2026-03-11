@@ -1,4 +1,4 @@
-# mphil_dis_cholesky
+# cholesky
 
 In-place Cholesky factorisation (`C = L Lᵀ`) optimised for multi-core CPUs,
 developed for the MPhil DIS C2 HPC coursework (CSD3 icelake, 76-core Intel
