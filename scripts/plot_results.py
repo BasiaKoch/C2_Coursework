@@ -55,7 +55,6 @@ plt.rcParams.update({
 COLORS = {
     "v1_baseline":       "#d62728",
     "v2_serial_opt":     "#1f77b4",
-    "v3_serial_opt":     "#2ca02c",
     "v3_openmp":         "#ff7f0e",
     "v5_blocked_NB96":  "#9467bd",
     "v6_blocked_NB96":  "#17becf",
@@ -68,7 +67,6 @@ MARKERS = {
 LABELS = {
     "v1_baseline":      "v1 baseline (−O0)",
     "v2_serial_opt":    "v2 serial opt (−O3)",
-    "v3_serial_opt":    "v3 serial opt (−O3)",
     "v3_openmp":        "v3 OpenMP (flat parallel)",
     "v5_blocked_NB96": "v5 panel-blocked (NB=96)",
     "v6_blocked_NB96": "v6 panel-blocked + cache opts (NB=96)",
@@ -99,7 +97,7 @@ scaling_agg = reduce(scaling, ["version", "n", "threads"])
 # Fig 1 — Serial GFLOPS comparison
 # ==================================================================
 def fig1():
-    vers  = ["v1_baseline", "v2_serial_opt", "v3_serial_opt"]
+    vers  = ["v1_baseline", "v2_serial_opt"]
     ns    = sorted(serial_agg["n"].unique())
     x     = np.arange(len(ns))
     width = 0.25
@@ -344,7 +342,7 @@ def fig6():
 # Fig 7 — Wall-clock time vs n (serial comparison)
 # ==================================================================
 def fig7():
-    vers = ["v1_baseline", "v2_serial_opt", "v3_serial_opt"]
+    vers = ["v1_baseline", "v2_serial_opt"]
     fig, ax = plt.subplots(figsize=(6, 4))
 
     for v in vers:
@@ -384,7 +382,7 @@ def fig9():
     N_TARGET = 4000   # representative size: in serial CSV and scaling CSV
 
     # --- serial versions from serial CSV ---
-    serial_vers = ["v1_baseline", "v2_serial_opt", "v3_serial_opt"]
+    serial_vers = ["v1_baseline", "v2_serial_opt"]
     rows = []
     for v in serial_vers:
         d = serial_agg[(serial_agg["version"] == v) & (serial_agg["n"] == N_TARGET)]

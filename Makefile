@@ -32,9 +32,6 @@ endif
 ifeq ($(VERSION),v2_serial_opt)
   OPT_FLAGS = -O3 -march=native -ffast-math
 endif
-ifeq ($(VERSION),v3_serial_opt)
-  OPT_FLAGS = -O3 -march=native -ffast-math
-endif
 ifeq ($(VERSION),v3_openmp)
   OPT_FLAGS = -O3 -march=native -ffast-math -fopenmp
 endif

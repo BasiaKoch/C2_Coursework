@@ -108,7 +108,7 @@ The innermost trailing update iterates over $j$ in the outer loop and $i$ in
 the inner loop, so \texttt{c[i*n+j]} is accessed with stride $n$ in the inner
 loop --- a cache miss on every iteration for large~$n$.
 
-\subsection{v2/v3 --- Serial optimisation (tag \texttt{v0.2-serial-opt})}
+\subsection{v2 --- Serial optimisation (tag \texttt{v0.2-serial-opt})}
 
 Two changes are made, both single-threaded:
 \begin{enumerate}
@@ -121,8 +121,6 @@ Two changes are made, both single-threaded:
 \end{enumerate}
 Compiled with \texttt{-O3 -march=native -ffast-math}, these changes give
 13--16$\times$ speedup over v1 for $n = 500$--$2000$ (Figure~\ref{fig:serial}).
-Version v3\_serial\_opt is identical in performance to v2 but adds explicit
-comments required by the coursework.
 
 \subsection{v3\_openmp --- Flat OpenMP parallelism (tag \texttt{v0.3-openmp-v1})}
 
@@ -235,7 +233,7 @@ Jobs were submitted via SLURM (\texttt{--exclusive}, INTR queue,
 Version & Flags \\
 \midrule
 v1 & \texttt{gcc -O0 -g -std=gnu11 -I include} \\
-v2, v3\_serial\_opt & \texttt{gcc -O3 -march=native -ffast-math -std=gnu11 -I include} \\
+v2\_serial\_opt & \texttt{gcc -O3 -march=native -ffast-math -std=gnu11 -I include} \\
 v3\_openmp, v5, v6 & \texttt{gcc -O3 -march=native -ffast-math -fopenmp -std=gnu11 -I include} \\
 \bottomrule
 \end{tabular}
@@ -277,14 +275,12 @@ Tag & Source file & Description \\
 Figure~\ref{fig:serial} shows that v2 achieves 13--16$\times$ speedup over v1
 across $n=500$--$2000$, confirmed in the log-log time plot (Figure~\ref{fig:serialtime})
 where both versions follow the same $O(n^3)$ slope.
-v3\_serial\_opt is statistically indistinguishable from v2 (ratio within 7\%
-at all sizes), confirming that comments carry no runtime cost.
 
 \begin{figure}[h]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\linewidth]{figures/fig1_serial_gflops.pdf}
-    \caption{Serial GFLOP/s (v1, v2, v3\_serial).}
+    \caption{Serial GFLOP/s (v1, v2).}
     \label{fig:serial}
   \end{subfigure}\hfill
   \begin{subfigure}[b]{0.48\textwidth}
