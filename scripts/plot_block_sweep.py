@@ -53,7 +53,7 @@ ax.axvline(best_nb, color="red", linestyle="--", linewidth=1.0,
 ax.set_xlabel("Panel width BLOCK_NB (doubles)")
 ax.set_ylabel("Performance (GFLOP/s)")
 ax.set_title(
-    f"Fig 8 — GFLOP/s vs panel width (v5_openmp_blocked)\n"
+    f"Fig 8 — GFLOP/s vs panel width (blocked OpenMP)\n"
     f"n={n}, {threads} threads, CSD3 icelake, {len(df['rep'].unique())} reps"
 )
 ax.set_xticks(agg["BLOCK_NB"].tolist())

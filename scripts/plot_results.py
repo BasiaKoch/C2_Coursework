@@ -6,12 +6,12 @@ Usage:
     python3 scripts/plot_results.py
 
 Outputs (saved to report/figures/):
-    fig1_serial_gflops.pdf       — Serial GFLOPS comparison (v1, v2, v3_serial)
-    fig2_scaling_gflops.pdf      — Strong scaling: GFLOPS vs threads (v3, v5, v6)
+    fig1_serial_gflops.pdf       — Serial GFLOPS comparison (v1, v2)
+    fig2_scaling_gflops.pdf      — Strong scaling: GFLOPS vs threads (v3, v4, v5)
     fig3_scaling_speedup.pdf     — Strong scaling: speedup vs threads
     fig4_scaling_efficiency.pdf  — Strong scaling: parallel efficiency vs threads
-    fig5_problem_size.pdf        — GFLOPS vs n at selected thread counts (v6)
-    fig6_v3_vs_v5_n8000.pdf      — v3 vs v5 vs v6 head-to-head at n=8000
+    fig5_problem_size.pdf        — GFLOPS vs n at selected thread counts (v5)
+    fig6_v3_v4_v5_n8000.pdf      — v3 vs v4 vs v5 head-to-head at n=8000
     fig7_serial_time.pdf         — Wall-clock time vs n (serial versions, log-log)
     fig9_incremental.pdf         — Incremental optimisation: GFLOPS per version at 1T
 """
@@ -56,20 +56,20 @@ COLORS = {
     "v1_baseline":       "#d62728",
     "v2_serial_opt":     "#1f77b4",
     "v3_openmp":         "#ff7f0e",
-    "v5_blocked_NB96":  "#9467bd",
-    "v6_blocked_NB96":  "#17becf",
+    "v4_blocked_NB96":  "#9467bd",
+    "v5_blocked_NB96":  "#17becf",
 }
 MARKERS = {
     "v3_openmp":         "o",
-    "v5_blocked_NB96":  "s",
-    "v6_blocked_NB96":  "D",
+    "v4_blocked_NB96":  "s",
+    "v5_blocked_NB96":  "D",
 }
 LABELS = {
     "v1_baseline":      "v1 baseline (−O0)",
     "v2_serial_opt":    "v2 serial opt (−O3)",
     "v3_openmp":        "v3 OpenMP (flat parallel)",
-    "v5_blocked_NB96": "v5 panel-blocked (NB=96)",
-    "v6_blocked_NB96": "v6 panel-blocked + cache opts (NB=96)",
+    "v4_blocked_NB96": "v4 panel-blocked (NB=96)",
+    "v5_blocked_NB96": "v5 panel-blocked + cache opts (NB=96)",
 }
 
 # ------------------------------------------------------------------
@@ -136,7 +136,7 @@ def fig1():
 # ==================================================================
 def fig2():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
+    vers = ["v3_openmp", "v4_blocked_NB96", "v5_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=False)
 
     for ax, n in zip(axes, ns):
@@ -157,7 +157,7 @@ def fig2():
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper left", bbox_to_anchor=(0.01, 0.99))
     fig.suptitle("Fig 2 — Strong scaling: GFLOP/s vs thread count\n"
-                 "(CSD3 icelake, v3_openmp vs v5_blocked_NB96, 3 reps, error bars = ±1 SD)",
+                 "(CSD3 icelake, v3_openmp vs v4_blocked_NB96 vs v5_blocked_NB96, 3 reps, error bars = ±1 SD)",
                  y=1.02, fontsize=10)
     fig.tight_layout()
     path = os.path.join(FIG_DIR, "fig2_scaling_gflops.pdf")
@@ -170,7 +170,7 @@ def fig2():
 # ==================================================================
 def fig3():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
+    vers = ["v3_openmp", "v4_blocked_NB96", "v5_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=False)
 
     for ax, n in zip(axes, ns):
@@ -204,7 +204,7 @@ def fig3():
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper left", bbox_to_anchor=(0.01, 0.99))
     fig.suptitle("Fig 3 — Strong scaling: speedup vs thread count\n"
-                 "(CSD3 icelake, v3_openmp vs v5_blocked_NB96)",
+                 "(CSD3 icelake, v3_openmp vs v4_blocked_NB96 vs v5_blocked_NB96)",
                  y=1.02, fontsize=10)
     fig.tight_layout()
     path = os.path.join(FIG_DIR, "fig3_scaling_speedup.pdf")
@@ -217,7 +217,7 @@ def fig3():
 # ==================================================================
 def fig4():
     ns   = sorted(scaling_agg["n"].unique())
-    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
+    vers = ["v3_openmp", "v4_blocked_NB96", "v5_blocked_NB96"]
     fig, axes = plt.subplots(1, len(ns), figsize=(13, 4), sharey=True)
 
     for ax, n in zip(axes, ns):
@@ -246,7 +246,7 @@ def fig4():
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper right", bbox_to_anchor=(0.99, 0.99))
     fig.suptitle("Fig 4 — Strong scaling: parallel efficiency vs thread count\n"
-                 "(CSD3 icelake, v3_openmp vs v5_blocked_NB96)",
+                 "(CSD3 icelake, v3_openmp vs v4_blocked_NB96 vs v5_blocked_NB96)",
                  y=1.02, fontsize=10)
     fig.tight_layout()
     path = os.path.join(FIG_DIR, "fig4_scaling_efficiency.pdf")
@@ -255,10 +255,10 @@ def fig4():
     print(f"Saved {path}")
 
 # ==================================================================
-# Fig 5 — GFLOPS vs problem size n (v5 only, selected thread counts)
+# Fig 5 — GFLOPS vs problem size n (v5 tuned blocked version, selected thread counts)
 # ==================================================================
 def fig5():
-    v = "v6_blocked_NB96"
+    v = "v5_blocked_NB96"
     selected_threads = [1, 8, 32, 76]
     thread_colors = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"]
 
@@ -272,7 +272,7 @@ def fig5():
 
     ax.set_xlabel("Matrix dimension n")
     ax.set_ylabel("Performance (GFLOP/s)")
-    ax.set_title("Fig 5 — GFLOP/s vs problem size (v6 panel-blocked + cache opts, NB=96)\n"
+    ax.set_title("Fig 5 — GFLOP/s vs problem size (v5 panel-blocked + cache opts, NB=96)\n"
                  "(CSD3 icelake, 3 reps, error bars = ±1 SD)")
     ax.legend()
     fig.tight_layout()
@@ -282,17 +282,20 @@ def fig5():
     print(f"Saved {path}")
 
 # ==================================================================
-# Fig 6 — v3 vs v5 head-to-head at n=8000
+# Fig 6 — v3 vs v4 vs v5 head-to-head at n=8000
 # ==================================================================
 def fig6():
     n    = 8000
-    vers = ["v3_openmp", "v5_blocked_NB96", "v6_blocked_NB96"]
+    vers = ["v3_openmp", "v4_blocked_NB96", "v5_blocked_NB96"]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    v3_missing = False
 
     for v in vers:
         d = scaling_agg[(scaling_agg["version"] == v) &
                         (scaling_agg["n"] == n)].sort_values("threads")
         if d.empty:
+            if v == "v3_openmp":
+                v3_missing = True
             continue
         ax1.errorbar(d["threads"], d["gflops_mean"], yerr=d["gflops_std"],
                      label=LABELS[v], color=COLORS[v],
@@ -305,10 +308,10 @@ def fig6():
                      label=LABELS[v], color=COLORS[v],
                      marker=MARKERS[v], linewidth=1.6)
 
-    ax1.axhline(scaling_agg[(scaling_agg["version"] == "v6_blocked_NB96") &
+    ax1.axhline(scaling_agg[(scaling_agg["version"] == "v5_blocked_NB96") &
                              (scaling_agg["n"] == n) &
                              (scaling_agg["threads"] == 76)]["gflops_mean"].values[0],
-               color=COLORS["v6_blocked_NB96"], linestyle=":", linewidth=0.8)
+               color=COLORS["v5_blocked_NB96"], linestyle=":", linewidth=0.8)
     ax1.set_xlabel("Threads")
     ax1.set_ylabel("Performance (GFLOP/s)")
     ax1.set_title(f"GFLOP/s  (n={n})")
@@ -330,10 +333,18 @@ def fig6():
     ax2.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
     ax2.legend()
 
-    fig.suptitle(f"Fig 6 — v3 (flat parallel) vs v5 (panel-blocked) at n={n}\n"
-                 "(CSD3 icelake, 3 reps)", fontsize=10)
+    if v3_missing:
+        ax1.text(0.03, 0.03, "v3_openmp not benchmarked at n=8000",
+                 transform=ax1.transAxes, fontsize=8, color="#555555")
+        ax2.text(0.03, 0.03, "v3_openmp not benchmarked at n=8000",
+                 transform=ax2.transAxes, fontsize=8, color="#555555")
+        fig.suptitle(f"Fig 6 — v4/v5 head-to-head at n={n}\n"
+                     "(v3 unavailable at this size; CSD3 icelake, 3 reps)", fontsize=10)
+    else:
+        fig.suptitle(f"Fig 6 — v3 (flat parallel) vs v4/v5 (panel-blocked) at n={n}\n"
+                     "(CSD3 icelake, 3 reps)", fontsize=10)
     fig.tight_layout()
-    path = os.path.join(FIG_DIR, "fig6_v3_vs_v5_n8000.pdf")
+    path = os.path.join(FIG_DIR, "fig6_v3_v4_v5_n8000.pdf")
     fig.savefig(path)
     plt.close(fig)
     print(f"Saved {path}")
@@ -375,7 +386,7 @@ def fig7():
 
 # ==================================================================
 # Fig 9 — Incremental optimisation: GFLOPS per version at 1 thread
-# Combines serial CSV (v1, v2, v3_serial) with scaling CSV (v5, v6 at 1T).
+# Combines serial CSV (v1, v2) with scaling CSV (v3, v4, v5 at 1T).
 # Shows the performance gain from each individual optimisation step.
 # ==================================================================
 def fig9():
@@ -396,8 +407,9 @@ def fig9():
 
     # --- parallel versions at 1 thread from scaling CSV ---
     for v, label_override in [
-        ("v5_blocked_NB96",  "v5 blocked 1T\n(NB=96)"),
-        ("v6_blocked_NB96",  "v6 cache opts 1T\n(NB=96)"),
+        ("v3_openmp",       "v3 flat OpenMP 1T"),
+        ("v4_blocked_NB96",  "v4 blocked 1T\n(NB=96)"),
+        ("v5_blocked_NB96",  "v5 cache opts 1T\n(NB=96)"),
     ]:
         d = scaling_agg[(scaling_agg["version"] == v) &
                         (scaling_agg["n"] == N_TARGET) &
@@ -434,7 +446,7 @@ def fig9():
     ax.set_ylabel("Performance (GFLOP/s)")
     ax.set_title(
         f"Fig 9 — Incremental optimisation: single-thread GFLOP/s at n={N_TARGET}\n"
-        f"(CSD3 icelake, 1 thread, 3 reps, error bars = ±1 SD)"
+        f"(versions shown where n={N_TARGET} data exists; CSD3 icelake, 1 thread, 3 reps, error bars = ±1 SD)"
     )
     ax.grid(True, axis="y", alpha=0.35, linestyle="--", zorder=0)
     ax.set_axisbelow(True)

@@ -6,7 +6,7 @@
  * reports elapsed time, log-determinant, and performance in GFLOP/s.
  *
  * Build:
- *   make example VERSION=v5_openmp_blocked NB=128
+ *   make example VERSION=v5_openmp_blocked NB=96
  *
  * Run:
  *   ./example/example 4000

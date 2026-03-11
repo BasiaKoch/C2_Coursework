@@ -13,7 +13,7 @@
  * Log-det reference values computed with numpy.linalg.cholesky on the
  * same corr() matrix used here (see scripts/plot_results.py / analysis_notes.md).
  *
- * Build:   make test VERSION=v5_openmp_blocked NB=128
+ * Build:   make test VERSION=v5_openmp_blocked NB=96
  * Returns: 0 if all tests pass, 1 otherwise.
  */
 

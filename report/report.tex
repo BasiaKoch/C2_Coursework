@@ -35,7 +35,7 @@ giving 59.4$\times$ speedup and 78.2\% efficiency at 76~threads for $n=8000$
 (146.9~GFLOP/s).
 Four additional optimizations---column packing, a private packed panel block,
 4-wide SYRK unrolling, and round-robin scheduling---improve single-thread
-performance by 2.53$\times$ relative to v5 at $n{=}8000$, and the final
+performance by 2.53$\times$ relative to v4 at $n{=}8000$, and the final
 version reaches 181.2~GFLOP/s at 76~threads.
 \end{abstract}
 
@@ -96,7 +96,7 @@ against NumPy reference values for the corr-function test matrices at
 $n \in \{5, 50, 200\}$, with agreement to within $10^{-6}$ relative tolerance.
 The 2$\times$2 example from the coursework brief ($C = \bigl[\begin{smallmatrix}4&2\\2&26\end{smallmatrix}\bigr]$)
 is verified element-by-element.
-All 38 test cases pass (\texttt{make test VERSION=v6\_openmp\_blocked NB=96}).
+All 38 test cases pass (\texttt{make test VERSION=v5\_openmp\_blocked NB=96}).
 
 % ======================================================================
 \section{Optimisation Strategy}
@@ -146,7 +146,7 @@ At $n=4000$ the problem is large enough that v3 saturates at 65.7~GFLOP/s from
 64 to 76~threads (31.6$\times$ speedup, 41.6\% efficiency) without degrading,
 but still far below linear.
 
-\subsection{v5\_openmp\_blocked --- Panel-blocked algorithm (tag \texttt{v0.4-blocked})}
+\subsection{v4\_openmp\_blocked --- Panel-blocked algorithm (tag \texttt{v0.4-blocked})}
 
 Replacing the column-by-column outer loop with a panel-of-$\mathrm{NB}$-columns
 loop reduces synchronisation from $O(n)$ barriers to $O(n/\mathrm{NB})$.
@@ -171,8 +171,8 @@ Each panel pass performs three phases:
   \item \textbf{Phase~3 (parallel): SYRK trailing lower-triangle update.}
     \texttt{\#pragma~omp~for~schedule(guided)} distributes the triangular update
     $C_{ij} \mathrel{-}= \sum_p L_{ip}L_{jp}$ for $j \leq i$.
-    Work per row increases linearly with~$i$; guided scheduling assigns large
-    chunks early to balance this non-uniform load.
+    Work per row increases linearly with~$i$; this guided policy does not always
+    balance the increasing triangular load optimally (see v5 OPT-4).
     \texttt{\#pragma~omp~simd reduction(+:dot)} vectorizes the inner dot product.
 \end{enumerate}
 
@@ -183,9 +183,9 @@ NB=96 peaks at 149.5~GFLOP/s; NB=64 pays a higher synchronisation cost
 from stride-$n$ column accesses in Phase~1 (panel row $=$ NB$\times$8~bytes;
 at NB=96, 768~B is small relative to the 48~KB L1 cache per core).
 
-\subsection{v6\_openmp\_blocked --- Microarchitectural optimisation (tag \texttt{v0.6-cache-opts})}
+\subsection{v5\_openmp\_blocked --- Microarchitectural optimisation (tag \texttt{v0.6-cache-opts})}
 
-Four targeted optimisations are added over v5; the algorithm and barrier count
+Four targeted optimisations are added over v4; the algorithm and barrier count
 are unchanged.
 
 \begin{enumerate}
@@ -197,7 +197,7 @@ are unchanged.
   \item \textbf{OPT-2: Private per-thread packed panel block (Phase~2).}
     Phase~2 TRSM reads \texttt{c[p*n+s]} with stride $n$ between rows of the
     diagonal block; for NB=96 rows this spans $96\times64$~KB~$=$~6~MB, exceeding
-    L2 (2~MB/core).
+    L2 (1.25~MB/core).
     Declaring \texttt{double l11[NB*NB]} inside \texttt{\#pragma~omp~parallel}
     (private to each thread) and packing the $\mathrm{NB}\times\mathrm{NB}$
     lower triangle after Phase~1 produces a 73-KB contiguous copy that fits
@@ -240,7 +240,7 @@ Version & Flags \\
 \midrule
 v1 & \texttt{gcc -O0 -g -std=gnu11 -I include} \\
 v2\_serial\_opt & \texttt{gcc -O3 -march=native -ffast-math -std=gnu11 -I include} \\
-v3\_openmp, v5, v6 & \texttt{gcc -O3 -march=native -ffast-math -fopenmp -std=gnu11 -I include} \\
+v3\_openmp, v4, v5 & \texttt{gcc -O3 -march=native -ffast-math -fopenmp -std=gnu11 -I include} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -267,9 +267,9 @@ Tag & Source file & Description \\
 \texttt{v0.1-baseline}   & \texttt{src/cholesky\_v1\_baseline.c}        & Spec loop, \texttt{-O0} \\
 \texttt{v0.2-serial-opt} & \texttt{src/cholesky\_v2\_serial\_opt.c}     & Loop interchange, \texttt{-O3} \\
 \texttt{v0.3-openmp-v1}  & \texttt{src/cholesky\_v3\_openmp.c}          & First OpenMP version \\
-\texttt{v0.4-blocked}    & \texttt{src/cholesky\_v5\_openmp\_blocked.c} & Panel-blocked, NB=96 \\
-\texttt{v0.5-tuned}      & \texttt{src/cholesky\_v5\_openmp\_blocked.c} & Correctness fix (lower-triangle Phase~1) \\
-\texttt{v0.6-cache-opts} & \texttt{src/cholesky\_v6\_openmp\_blocked.c} & OPT-1--4 microarchitectural \\
+\texttt{v0.4-blocked}    & \texttt{src/cholesky\_v4\_openmp\_blocked.c} & Panel-blocked, NB=96 \\
+\texttt{v0.5-tuned}      & \texttt{src/cholesky\_v4\_openmp\_blocked.c} & Correctness fix (lower-triangle Phase~1) \\
+\texttt{v0.6-cache-opts} & \texttt{src/cholesky\_v5\_openmp\_blocked.c} & OPT-1--4 microarchitectural \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -303,24 +303,28 @@ where both versions follow the same $O(n^3)$ slope.
 \subsection{Incremental optimisation}
 
 Figure~\ref{fig:incremental} summarizes the single-thread GFLOP/s at each
-development stage for $n=4000$.
-The v1$\to$v2 gain (0.26$\to$2.09~GFLOP/s, 8$\times$) is attributable mainly
-to loop reordering and compiler flags.
-The v5$\to$v6 gain (2.61$\to$7.21~GFLOP/s, 2.76$\times$) is consistent with
-the low-level optimisations in v6 improving single-thread behaviour even in the
+development stage for $n=4000$ where data is available.
+The v1 baseline is approximately 0.26~GFLOP/s at smaller tested sizes
+($n\le 2000$), while v2 reaches 2.09~GFLOP/s at $n=4000$ due mainly to loop
+reordering and compiler flags.
+The v2 and v3 single-thread points are nearly identical, indicating that
+OpenMP scaffolding does not materially change 1-thread performance.
+The v4$\to$v5 gain (2.61$\to$7.21~GFLOP/s, 2.76$\times$) is consistent with
+the low-level optimisations in v5 improving single-thread behaviour even in the
 absence of additional parallelism.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.72\textwidth]{figures/fig9_incremental.pdf}
-  \caption{Incremental optimisation: single-thread GFLOP/s at $n=4000$.
+  \caption{Incremental optimisation: single-thread GFLOP/s at $n=4000$
+           (versions with available $n=4000$ data: v2--v5).
            CSD3 icelake, 1~thread, 3~reps, error bars $=\pm1$~SD.}
   \label{fig:incremental}
 \end{figure}
 
 \subsection{Panel-width selection}
 
-Figure~\ref{fig:blocksweep} shows the NB sweep for v5 at $n=8000$, 76~threads.
+Figure~\ref{fig:blocksweep} shows the NB sweep for v4 at $n=8000$, 76~threads.
 NB=96 (panel row $= 768$~B, fits in 48~KB L1) peaks at 149.5~GFLOP/s.
 Smaller NB increases barrier frequency (NB=64: 125 vs.\ 83 panels).
 Larger NB degrades monotonically (NB=128: 137.8; NB=256: 121.7~GFLOP/s),
@@ -329,7 +333,7 @@ consistent with growing L1/L2 pressure from stride-$n$ column accesses.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.58\textwidth]{figures/fig8_block_sweep.pdf}
-  \caption{GFLOP/s vs.\ panel width NB (v5\_openmp\_blocked, $n=8000$, 76~threads,
+  \caption{GFLOP/s vs.\ panel width NB (v4\_openmp\_blocked, $n=8000$, 76~threads,
            CSD3 icelake, 3~reps).}
   \label{fig:blocksweep}
 \end{figure}
@@ -337,9 +341,12 @@ consistent with growing L1/L2 pressure from stride-$n$ column accesses.
 \subsection{Strong scaling}
 
 Figures~\ref{fig:scaling}--\ref{fig:efficiency} show GFLOP/s, speedup, and
-efficiency for v3\_openmp, v5, and v6 across $n\in\{2000,4000,6000,8000\}$.
-Note that v3 data for $n\geq6000$ is incomplete: the single-thread runtime
-at $n=6000$ ($\approx$43~s) and $n=8000$ ($\approx$107~s) would have exceeded
+efficiency for v3\_openmp, v4, and v5 where data is available across
+$n\in\{2000,4000,6000,8000\}$.
+For v3, only $n=2000$ and $n=4000$ include full thread sweeps; at $n=6000$
+only the single-thread point was collected, and $n=8000$ is unavailable.
+The single-thread runtimes at $n=6000$ ($\approx$43~s) and $n=8000$ ($\approx$107~s)
+would have exceeded
 the 1-hour INTR limit when multiplied over all 9 thread counts and 3~reps.
 
 \begin{figure}[h]
@@ -375,18 +382,18 @@ The factorization performs $n=2000$ synchronisation points; the parallel work
 per step ($\approx(n-p)^2/T$) likely falls below the barrier overhead
 at high $T$, consistent with the observed efficiency of 14.2\% at 76~threads.
 
-\paragraph{v5 near-linear scaling.}
-At $n=8000$, v5 achieves 59.4$\times$ speedup and 78.2\% efficiency at
+\paragraph{v4 near-linear scaling.}
+At $n=8000$, v4 achieves 59.4$\times$ speedup and 78.2\% efficiency at
 76~threads (146.9~GFLOP/s), with near-linear scaling to 32~threads.
 Each of the 83 parallel-work panels replaces approximately NB=96 individual
 column steps from v3, substantially reducing synchronisation frequency.
 
-\paragraph{v6 microarchitectural gain.}
-At $n=8000$, v6 achieves 181.2~GFLOP/s at 76~threads (+23\% over v5).
-Its single-thread performance is 2.53$\times$ higher than v5 (6.25 vs.\
+\paragraph{v5 microarchitectural gain.}
+At $n=8000$, v5 achieves 181.2~GFLOP/s at 76~threads (+23\% over v4).
+Its single-thread performance is 2.53$\times$ higher than v4 (6.25 vs.\
 2.47~GFLOP/s), consistent with improved data locality and SIMD efficiency.
-The lower reported parallel efficiency of v6 (38\%) compared to v5 (78\%)
-should not be read as worse parallelism: v6 is faster than v5 at every tested
+The lower reported parallel efficiency of v5 (38\%) compared to v4 (78\%)
+should not be read as worse parallelism: v5 is faster than v4 at every tested
 thread count, but efficiency is normalized by single-thread performance, so a
 faster single-thread baseline reduces the ratio.
 
@@ -394,30 +401,28 @@ faster single-thread baseline reduces the ratio.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=\textwidth]{figures/fig6_v3_vs_v5_n8000.pdf}
-  \caption{v3 vs.\ v5 vs.\ v6 at $n=8000$: GFLOP/s (left) and parallel
-           efficiency (right). CSD3 icelake, 3~reps.}
+  \includegraphics[width=\textwidth]{figures/fig6_v3_v4_v5_n8000.pdf}
+  \caption{Head-to-head at $n=8000$: GFLOP/s (left) and parallel
+           efficiency (right) for v3, v4, and v5 where data is available in
+           \texttt{results/csd3\_scaling.csv}. CSD3 icelake, 3~reps.}
   \label{fig:headtohead}
 \end{figure}
 
-Figure~\ref{fig:headtohead} compares v5 and v6 at $n=8000$; v3 has no data at
-this size (too slow at 1~thread to complete the full scaling study within the
-time limit).
-For context, at $n=4000$ and 76~threads --- the largest size at which v3
-completed --- v6 achieves 205.0~GFLOP/s vs.\ v3's 65.7~GFLOP/s (3.12$\times$),
-and v5 achieves 144.9~GFLOP/s (2.21$\times$ over v3).
+Figure~\ref{fig:headtohead} compares the three versions at fixed problem size
+$n=8000$ where available. This isolates algorithmic and implementation
+differences without conflating matrix-size effects.
 
 \subsection{Problem-size scaling}
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.62\textwidth]{figures/fig5_problem_size.pdf}
-  \caption{GFLOP/s vs.\ $n$ for v6 at selected thread counts.
+  \caption{GFLOP/s vs.\ $n$ for v5 at selected thread counts.
            CSD3 icelake, 3~reps, error bars $=\pm1$~SD.}
   \label{fig:problemsize}
 \end{figure}
 
-Figure~\ref{fig:problemsize} shows that v6 throughput \emph{decreases} with $n$
+Figure~\ref{fig:problemsize} shows that v5 throughput \emph{decreases} with $n$
 at all tested thread counts.
 At 76~threads, performance falls from 238.8~GFLOP/s at $n=2000$ to
 181.2~GFLOP/s at $n=8000$.
@@ -438,7 +443,7 @@ the overhead of $n=4000$ synchronisation points.
 Although the trailing update dominates the total flop count asymptotically,
 the per-step serial work and synchronisation overhead become increasingly
 visible at high thread counts.
-v5 largely alleviates both effects by reducing the serial work to $O(\mathrm{NB}^3)$
+v4 largely alleviates both effects by reducing the serial work to $O(\mathrm{NB}^3)$
 per panel and the number of synchronisation points to 83.
 
 \paragraph{Super-linear speedup.}
@@ -451,13 +456,13 @@ This appears to be a cache-capacity effect rather than algorithmic
 super-linearity; the margin above ideal speedup is small and may partly reflect
 measurement variation.
 
-\paragraph{v6 efficiency interpretation.}
-The lower reported parallel efficiency of v6 (38\%) compared to v5 (78\%)
-might suggest v6 parallelizes worse.
+\paragraph{v5 efficiency interpretation.}
+The lower reported parallel efficiency of v5 (38\%) compared to v4 (78\%)
+might suggest v5 parallelizes worse.
 That interpretation would be misleading on its own: efficiency is normalized by
 single-thread performance, so a faster single-thread baseline lowers the reported
 ratio even when absolute parallel throughput improves.
-In these results, v6 is faster than v5 at every tested thread count (0.94~s
+In these results, v5 is faster than v4 at every tested thread count (0.94~s
 vs.\ 1.16~s at 76T), so the lower efficiency does not indicate a worse
 implementation.
 However, it may also reflect earlier saturation of shared bottlenecks, so
@@ -466,7 +471,7 @@ absolute runtime should be the primary measure.
 \paragraph{Memory-bound vs.\ compute-bound.}
 For small $n$ (2000), the matrix ($n^2 \times 8 = 32$~MB) fits within a
 single socket's L3 (57~MB) and the computation appears more compute-bound;
-v6 achieves 238.8~GFLOP/s at 76T.
+v5 achieves 238.8~GFLOP/s at 76T.
 For large $n$ (8000, 512~MB), the working set far exceeds the combined node
 L3 ($\approx$114~MB) and throughput falls to 181.2~GFLOP/s, consistent with
 a shift toward memory-system bottlenecks.
@@ -485,7 +490,7 @@ relative to the naive baseline.
 Loop reorder and compiler flags contribute 13--16$\times$ on a single core.
 Panel blocking greatly reduces the synchronisation overhead seen in v3,
 achieving 59.4$\times$ speedup and 78.2\% parallel efficiency.
-Additional locality, SIMD, and scheduling optimisations (v6) improve
+Additional locality, SIMD, and scheduling optimisations (v5) improve
 single-thread throughput by 2.5$\times$ and parallel throughput by a further
 +23\% at full thread count.
 For large matrices, performance appears increasingly limited by memory-system

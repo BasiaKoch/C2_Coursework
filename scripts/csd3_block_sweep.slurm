@@ -11,7 +11,7 @@
 #SBATCH --output=csd3_block_sweep_%j.out
 #SBATCH --error=csd3_block_sweep_%j.err
 
-# Block-size sweep for v5_openmp_blocked on CSD3 icelake.
+# Block-size sweep for blocked OpenMP versions on CSD3 icelake.
 # Submits from project root:
 #   sbatch scripts/csd3_block_sweep.slurm
 

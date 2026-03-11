@@ -1,5 +1,5 @@
 #!/bin/bash
-# sweep_block_size.sh — compile v5_openmp_blocked with different BLOCK_NB values
+# sweep_block_size.sh — compile a blocked OpenMP version with different BLOCK_NB values
 # and record performance for each panel width.
 #
 # Usage (on CSD3, inside a SLURM job or interactive session):
@@ -21,7 +21,7 @@ N=8000                          # Matrix size (large enough to be memory-bound)
 THREADS=76                      # Thread count (all icelake physical cores)
 REPS=3                          # Repetitions per (BLOCK_NB, n, threads) cell
 BLOCK_SIZES="64 96 128 192 256" # Panel widths to sweep
-VERSION=${VERSION:-v6_openmp_blocked}  # Default to v6; override with VERSION=v5_openmp_blocked
+VERSION=${VERSION:-v5_openmp_blocked}  # Default to tuned blocked version; override as needed
 OUT=results/block_sweep.csv
 
 # Thread affinity settings — keep threads on nearby physical cores

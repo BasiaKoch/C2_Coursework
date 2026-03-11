@@ -20,13 +20,13 @@ module load gcc/11
 
 ```bash
 # Build the best (panel-blocked OpenMP + micro-opts) version — recommended for performance
-make bench VERSION=v6_openmp_blocked NB=96
+make bench VERSION=v5_openmp_blocked NB=96
 
 # Build and run correctness tests
-make test VERSION=v6_openmp_blocked NB=96
+make test VERSION=v5_openmp_blocked NB=96
 
 # Build the example program
-make example VERSION=v6_openmp_blocked NB=96
+make example VERSION=v5_openmp_blocked NB=96
 
 # Build any other version
 make bench VERSION=v3_openmp
@@ -46,9 +46,8 @@ and links it with the test/example binaries.
 | `v1_baseline` | Exact spec loop, `-O0`, no optimisation |
 | `v2_serial_opt` | Loop interchange, hoisting, reciprocal division, `-O3` |
 | `v3_openmp` | First OpenMP parallel version: `omp for schedule(static)` |
-| `v5_serial_blocked` | Panel-blocked serial reference (tune with `NB=N`) |
-| `v5_openmp_blocked` | Panel-blocked OpenMP — baseline blocked version (tune with `NB=N`) |
-| `v6_openmp_blocked` | Panel-blocked OpenMP + 4 cache/SIMD opts: col-pack, L11 cache, j×4 unroll, static,1 schedule |
+| `v4_openmp_blocked` | Panel-blocked OpenMP — baseline blocked version (tune with `NB=N`) |
+| `v5_openmp_blocked` | Panel-blocked OpenMP + 4 cache/SIMD opts: col-pack, L11 cache, j×4 unroll, static,1 schedule |
 
 ## Usage
 
@@ -69,7 +68,7 @@ See `example/example.c` for a complete usage example.
 
 ## Performance Guidance
 
-For best performance use `v6_openmp_blocked` with the following environment
+For best performance use `v5_openmp_blocked` with the following environment
 variables (set automatically by the provided SLURM scripts):
 
 ```bash
@@ -80,10 +79,10 @@ export OMP_PLACES=cores          # one thread per core (no SMT)
 ```
 
 The panel width `NB=96` is empirically optimal on CSD3 icelake (96 doubles ≈
-768 B; the packed NB×NB block is ~74 KB, fitting in the 2 MB L2 per core).
+768 B; the packed NB×NB block is ~74 KB, fitting in the 1.25 MB L2 per core).
 Smaller matrices (n < 500) are memory-bound at any thread count.
 
-Measured peak performance on CSD3 icelake (76 threads, `v6_openmp_blocked`, NB=96):
+Measured peak performance on CSD3 icelake (76 threads, `v5_openmp_blocked`, NB=96):
 
 | n    | GFlop/s | Speedup vs 1 thread |
 |------|---------|---------------------|
@@ -98,7 +97,7 @@ Measured peak performance on CSD3 icelake (76 threads, `v6_openmp_blocked`, NB=9
 # Serial comparison (v1, v2, v3) — submits to icelake INTR queue
 sbatch scripts/csd3_serial.slurm
 
-# OpenMP strong scaling (v3_openmp vs v5_openmp_blocked, n=2000–8000, 1–76 threads)
+# OpenMP strong scaling (v3_openmp vs v4_openmp_blocked vs v5_openmp_blocked, n=2000–8000, 1–76 threads)
 sbatch scripts/csd3_scaling.slurm
 
 # Results are written to results/csd3_serial.csv and results/csd3_scaling.csv
@@ -111,14 +110,14 @@ not from inside `scripts/`.
 
 ```bash
 # Build first, then submit
-make example VERSION=v6_openmp_blocked NB=96
+make example VERSION=v5_openmp_blocked NB=96
 sbatch example/submit_csd3.slurm
 ```
 
 ## Testing
 
 ```bash
-make test VERSION=v6_openmp_blocked NB=96
+make test VERSION=v5_openmp_blocked NB=96
 ```
 
 Runs four test suites: 2×2 spec example, 3×3 hand-computed, `L Lᵀ`
