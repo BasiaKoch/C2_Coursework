@@ -23,6 +23,10 @@ os.makedirs(os.path.dirname(OUT_PDF), exist_ok=True)
 
 df = pd.read_csv(IN_CSV)
 
+# Backward compatibility: old files omitted "version" column.
+if "version" not in df.columns:
+    df["version"] = "unknown_blocked_version"
+
 # Aggregate reps → mean ± std per BLOCK_NB
 agg = df.groupby("BLOCK_NB").agg(
     gflops_mean=("gflops", "mean"),
@@ -33,6 +37,7 @@ agg = df.groupby("BLOCK_NB").agg(
 # Pull metadata for the title
 n       = int(df["n"].iloc[0])
 threads = int(df["threads"].iloc[0])
+version = str(df["version"].iloc[0])
 
 fig, ax = plt.subplots(figsize=(5.5, 4))
 
@@ -54,7 +59,7 @@ ax.set_xlabel("Panel width BLOCK_NB (doubles)")
 ax.set_ylabel("Performance (GFLOP/s)")
 ax.set_title(
     f"Fig 8 — GFLOP/s vs panel width (blocked OpenMP)\n"
-    f"n={n}, {threads} threads, CSD3 icelake, {len(df['rep'].unique())} reps"
+    f"{version}, n={n}, {threads} threads, CSD3 icelake, {len(df['rep'].unique())} reps"
 )
 ax.set_xticks(agg["BLOCK_NB"].tolist())
 

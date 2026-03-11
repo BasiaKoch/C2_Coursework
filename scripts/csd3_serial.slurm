@@ -11,7 +11,7 @@
 #SBATCH --output=csd3_serial_%j.out
 #SBATCH --error=csd3_serial_%j.err
 
-# Serial comparison: v1, v2, v3 at 1 thread
+# Serial comparison: v1 and v2 at 1 thread
 # Platform: CSD3 icelake
 # Threads: 1 (OMP_NUM_THREADS=1 so any OpenMP version also runs single-threaded)
 
@@ -54,7 +54,7 @@ for VERSION in v1_baseline; do
     done
 done
 
-# v2, v3, v4: -O3; extend to n=4000 to see cache effects
+# v2: -O3; extend to n=6000 for size-scaling in serial mode
 for VERSION in v2_serial_opt ; do
     echo ">>> Building $VERSION ..."
     make clean

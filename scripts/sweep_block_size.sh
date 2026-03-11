@@ -6,7 +6,7 @@
 #   bash scripts/sweep_block_size.sh
 #
 # Output:
-#   results/block_sweep.csv   columns: BLOCK_NB,n,threads,rep,time_s,gflops
+#   results/block_sweep.csv   columns: version,BLOCK_NB,n,threads,rep,time_s,gflops
 #
 # The script must be run from the project root (where Makefile lives).
 # The benchmark binary (test/benchmark) re-fills the matrix before every rep,
@@ -21,7 +21,7 @@ N=8000                          # Matrix size (large enough to be memory-bound)
 THREADS=76                      # Thread count (all icelake physical cores)
 REPS=3                          # Repetitions per (BLOCK_NB, n, threads) cell
 BLOCK_SIZES="64 96 128 192 256" # Panel widths to sweep
-VERSION=${VERSION:-v5_openmp_blocked}  # Default to tuned blocked version; override as needed
+VERSION=${VERSION:-v4_openmp_blocked}  # Default matches report Fig. 8; override as needed
 OUT=results/block_sweep.csv
 
 # Thread affinity settings — keep threads on nearby physical cores
@@ -33,7 +33,7 @@ export OMP_NUM_THREADS=$THREADS
 mkdir -p results
 
 # Always write a fresh header — overwrites any stale/incorrect previous run
-echo "BLOCK_NB,n,threads,rep,time_s,gflops" > "$OUT"
+echo "version,BLOCK_NB,n,threads,rep,time_s,gflops" > "$OUT"
 
 echo "Block-size sweep: n=$N, threads=$THREADS, reps=$REPS"
 echo "Panel widths: $BLOCK_SIZES"
@@ -56,7 +56,7 @@ for NB in $BLOCK_SIZES; do
     echo "    Running n=$N, threads=$THREADS, reps=$REPS ..."
     # benchmark outputs:  n,threads,rep,time_s,gflops
     # Prepend BLOCK_NB to each line before appending to the CSV
-    ./test/benchmark $N $REPS | sed "s/^/${NB},/" >> "$OUT"
+    ./test/benchmark $N $REPS | sed "s/^/${VERSION},${NB},/" >> "$OUT"
 done
 
 echo ""

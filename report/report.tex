@@ -256,7 +256,11 @@ A dedicated follow-up run for Figure~\ref{fig:headtohead} was merged into
 \texttt{results/csd3\_scaling.csv}, so points at $n=8000$ for v4 and v5 have
 6~repetitions in the current dataset.
 The mean wall-clock time is reported with $\pm1$~SD error bars.
-All coefficients of variation are below 3.5\%, confirming reproducibility.
+Most coefficients of variation are below 3.5\%
+(99/108 scaling cells and all serial cells).
+A small number of outliers remain in the merged scaling dataset
+(maximum 15.8\% at v5, $n=8000$, 8~threads), but these do not change the
+version ordering in the reported comparisons.
 Performance is expressed in GFLOP/s $= n^3/(3 \times t \times 10^9)$.
 Timings measure the factorization routine only; matrix generation,
 initialization, and correctness checks are excluded.
@@ -346,10 +350,9 @@ consistent with growing L1/L2 pressure from stride-$n$ column accesses.
 Figures~\ref{fig:scaling}--\ref{fig:efficiency} show GFLOP/s, speedup, and
 efficiency for v3\_openmp, v4, and v5 across
 $n\in\{2000,4000,6000,8000\}$.
-For v3, $n=2000$, $n=4000$, and $n=8000$ include full thread sweeps; at
-$n=6000$ only the single-thread point was collected in an earlier batch.
-The single-thread runtime at $n=6000$ ($\approx$43~s) made the full sweep
-expensive under the 1-hour INTR limit when combined with all versions.
+All three versions now have full thread sweeps at each plotted size.
+The v3 curve at $n=6000$ was added in a dedicated follow-up SLURM run and
+merged into \texttt{results/csd3\_scaling.csv}.
 
 \begin{figure}[h]
   \centering
@@ -383,6 +386,10 @@ Efficiency is only 14.2\% at 76~threads.
 The factorization performs $n=2000$ synchronisation points; the parallel work
 per step ($\approx(n-p)^2/T$) likely falls below the barrier overhead
 at high $T$, consistent with the observed efficiency of 14.2\% at 76~threads.
+With the newly completed large-$n$ curves, the same implementation reaches only
+26.3~GFLOP/s at $n=6000$ and 12.9~GFLOP/s at $n=8000$ at 76~threads,
+substantially below both blocked versions; this is consistent with the flat
+algorithm's high synchronization frequency and weaker cache locality.
 
 \paragraph{v4 near-linear scaling.}
 At $n=8000$, v4 achieves 59.5$\times$ speedup and 78.2\% efficiency at
@@ -416,6 +423,8 @@ size $n=8000$, isolating algorithmic and implementation differences without
 conflating matrix-size effects.
 At 76~threads, v3 reaches 12.9~GFLOP/s, v4 reaches 147.2~GFLOP/s, and v5
 reaches 182.7~GFLOP/s.
+Thus, at this size and thread count, v4 is 11.4$\times$ faster than v3 and v5
+is 14.2$\times$ faster than v3.
 
 \subsection{Problem-size scaling}
 
